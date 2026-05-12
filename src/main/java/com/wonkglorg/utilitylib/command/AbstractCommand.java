@@ -1,13 +1,17 @@
 package com.wonkglorg.utilitylib.command;
 
 import com.mojang.brigadier.Message;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import static io.papermc.paper.command.brigadier.Commands.argument;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
@@ -131,6 +135,61 @@ public abstract class AbstractCommand{
 				  .forEach(builder::suggest);
 		//@formatter:on
 		return builder;
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
+	 * @param suggestions the tab suggestions
+	 * @return the required argument
+	 */
+	public static <T> RequiredArgumentBuilder<CommandSourceStack, String> suggestedArgument(String argumentName, Collection<String> suggestions) {
+		return argument(argumentName, StringArgumentType.string()).suggests(suggestMatching(suggestions));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
+	 * @param argumentType the value type to interpret the argument as
+	 * @param suggestions the tab suggestions
+	 * @return the required argument
+	 */
+	public static <T> RequiredArgumentBuilder<CommandSourceStack, T> suggestedArgument(String argumentName,
+																					   ArgumentType<T> argumentType,
+																					   Collection<String> suggestions) {
+		return argument(argumentName, argumentType).suggests(suggestMatching(suggestions));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
+	 * @param suggestions the tab suggestions
+	 * @param toString the function to map the suggestion values to a string
+	 * @return the required argument
+	 */
+	public static <T> RequiredArgumentBuilder<CommandSourceStack, String> suggestedArgument(String argumentName,
+																							Collection<T> suggestions,
+																							Function<T, String> toString) {
+		return argument(argumentName, StringArgumentType.string()).suggests(suggestMatching(suggestions, toString));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
+	 * @param argumentType the value type to interpret the argument as
+	 * @param suggestions the tab suggestions
+	 * @param toString the function to map the suggestion values to a string
+	 * @return the required argument
+	 */
+	public static <T, U> RequiredArgumentBuilder<CommandSourceStack, T> suggestedArgument(String argumentName,
+																						  ArgumentType<T> argumentType,
+																						  Collection<U> suggestions,
+																						  Function<U, String> toString) {
+		return argument(argumentName, argumentType).suggests(suggestMatching(suggestions, toString));
 	}
 	
 	public static Message toMessage(Component component) {
