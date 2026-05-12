@@ -79,12 +79,36 @@ public abstract class AbstractCommand{
 	 * Returns elements from the provided list based on the current users input
 	 *
 	 * @param collection the set of completion options
+	 * @param <U> the source context
+	 * @return suggestion provider
+	 */
+	public static <U> SuggestionProvider<U> suggestMatching(String[] collection) {
+		return (ctx, builder) -> suggestMatching(builder, collection).buildFuture();
+	}
+	
+	/**
+	 * Returns elements from the provided list based on the current users input
+	 *
+	 * @param collection the set of completion options
 	 * @param toString the string function for these
 	 * @param <T> value of elements
 	 * @param <U> the source context
 	 * @return suggestion provider
 	 */
 	public static <T, U> SuggestionProvider<U> suggestMatching(Collection<T> collection, Function<T, String> toString) {
+		return (ctx, builder) -> suggestMatching(builder, collection, toString).buildFuture();
+	}
+	
+	/**
+	 * Returns elements from the provided list based on the current users input
+	 *
+	 * @param collection the set of completion options
+	 * @param toString the string function for these
+	 * @param <T> value of elements
+	 * @param <U> the source context
+	 * @return suggestion provider
+	 */
+	public static <T, U> SuggestionProvider<U> suggestMatching(T[] collection, Function<T, String> toString) {
 		return (ctx, builder) -> suggestMatching(builder, collection, toString).buildFuture();
 	}
 	
@@ -120,6 +144,22 @@ public abstract class AbstractCommand{
 	/**
 	 * Returns elements from the provided list based on the current users input
 	 *
+	 * @param collection the set of completion options
+	 * @return suggestion provider
+	 */
+	public static SuggestionsBuilder suggestMatching(SuggestionsBuilder builder, String[] collection) {
+		//@formatter:off
+		Arrays.stream(collection)
+				  .filter(Objects::nonNull)
+				  .filter(v -> v.toLowerCase().startsWith(builder.getRemainingLowerCase()))
+				  .forEach(builder::suggest);
+		//@formatter:on
+		return builder;
+	}
+	
+	/**
+	 * Returns elements from the provided list based on the current users input
+	 *
 	 * @param builder the suggestionBuilder to fill
 	 * @param collection the set of completion options
 	 * @param toString the string function for these
@@ -129,6 +169,26 @@ public abstract class AbstractCommand{
 	public static <T> SuggestionsBuilder suggestMatching(SuggestionsBuilder builder, Collection<T> collection, Function<T, String> toString) {
 		//@formatter:off
 		collection.stream()
+				  .filter(Objects::nonNull)
+				  .map(toString)
+				  .filter(v -> v.toLowerCase().startsWith(builder.getRemainingLowerCase()))
+				  .forEach(builder::suggest);
+		//@formatter:on
+		return builder;
+	}
+	
+	/**
+	 * Returns elements from the provided list based on the current users input
+	 *
+	 * @param builder the suggestionBuilder to fill
+	 * @param collection the set of completion options
+	 * @param toString the string function for these
+	 * @param <T> value of elements
+	 * @return suggestion provider
+	 */
+	public static <T> SuggestionsBuilder suggestMatching(SuggestionsBuilder builder, T[] collection, Function<T, String> toString) {
+		//@formatter:off
+		Arrays.stream(collection)
 				  .filter(Objects::nonNull)
 				  .map(toString)
 				  .filter(v -> v.toLowerCase().startsWith(builder.getRemainingLowerCase()))
@@ -152,6 +212,17 @@ public abstract class AbstractCommand{
 	 * Adds an argument with the given suggestion options
 	 *
 	 * @param argumentName the argument name
+	 * @param suggestions the tab suggestions
+	 * @return the required argument
+	 */
+	public static <T> RequiredArgumentBuilder<CommandSourceStack, String> suggestedArgument(String argumentName, String[] suggestions) {
+		return argument(argumentName, StringArgumentType.string()).suggests(suggestMatching(suggestions));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
 	 * @param argumentType the value type to interpret the argument as
 	 * @param suggestions the tab suggestions
 	 * @return the required argument
@@ -159,6 +230,20 @@ public abstract class AbstractCommand{
 	public static <T> RequiredArgumentBuilder<CommandSourceStack, T> suggestedArgument(String argumentName,
 																					   ArgumentType<T> argumentType,
 																					   Collection<String> suggestions) {
+		return argument(argumentName, argumentType).suggests(suggestMatching(suggestions));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
+	 * @param argumentType the value type to interpret the argument as
+	 * @param suggestions the tab suggestions
+	 * @return the required argument
+	 */
+	public static <T> RequiredArgumentBuilder<CommandSourceStack, T> suggestedArgument(String argumentName,
+																					   ArgumentType<T> argumentType,
+																					   String[] suggestions) {
 		return argument(argumentName, argumentType).suggests(suggestMatching(suggestions));
 	}
 	
@@ -180,6 +265,20 @@ public abstract class AbstractCommand{
 	 * Adds an argument with the given suggestion options
 	 *
 	 * @param argumentName the argument name
+	 * @param suggestions the tab suggestions
+	 * @param toString the function to map the suggestion values to a string
+	 * @return the required argument
+	 */
+	public static <T> RequiredArgumentBuilder<CommandSourceStack, String> suggestedArgument(String argumentName,
+																							T[] suggestions,
+																							Function<T, String> toString) {
+		return argument(argumentName, StringArgumentType.string()).suggests(suggestMatching(suggestions, toString));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
 	 * @param argumentType the value type to interpret the argument as
 	 * @param suggestions the tab suggestions
 	 * @param toString the function to map the suggestion values to a string
@@ -188,6 +287,22 @@ public abstract class AbstractCommand{
 	public static <T, U> RequiredArgumentBuilder<CommandSourceStack, T> suggestedArgument(String argumentName,
 																						  ArgumentType<T> argumentType,
 																						  Collection<U> suggestions,
+																						  Function<U, String> toString) {
+		return argument(argumentName, argumentType).suggests(suggestMatching(suggestions, toString));
+	}
+	
+	/**
+	 * Adds an argument with the given suggestion options
+	 *
+	 * @param argumentName the argument name
+	 * @param argumentType the value type to interpret the argument as
+	 * @param suggestions the tab suggestions
+	 * @param toString the function to map the suggestion values to a string
+	 * @return the required argument
+	 */
+	public static <T, U> RequiredArgumentBuilder<CommandSourceStack, T> suggestedArgument(String argumentName,
+																						  ArgumentType<T> argumentType,
+																						  U[] suggestions,
 																						  Function<U, String> toString) {
 		return argument(argumentName, argumentType).suggests(suggestMatching(suggestions, toString));
 	}
